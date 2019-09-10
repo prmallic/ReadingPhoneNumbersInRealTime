@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReadingPhoneNumbersInRealTime", "ReadingPhoneNumbersInRealTime\ReadingPhoneNumbersInRealTime.csproj", "{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|iPhoneSimulator = Debug|iPhoneSimulator
+		Release|iPhoneSimulator = Release|iPhoneSimulator
+		Debug|iPhone = Debug|iPhone
+		Release|iPhone = Release|iPhone
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Debug|iPhoneSimulator.ActiveCfg = Debug|iPhoneSimulator
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Debug|iPhoneSimulator.Build.0 = Debug|iPhoneSimulator
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Release|iPhoneSimulator.ActiveCfg = Release|iPhoneSimulator
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Release|iPhoneSimulator.Build.0 = Release|iPhoneSimulator
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Debug|iPhone.ActiveCfg = Debug|iPhone
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Debug|iPhone.Build.0 = Debug|iPhone
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Release|iPhone.ActiveCfg = Release|iPhone
+		{FB7C49E3-6EAD-4FA8-A02B-5BD417EFD800}.Release|iPhone.Build.0 = Release|iPhone
+	EndGlobalSection
+EndGlobal
