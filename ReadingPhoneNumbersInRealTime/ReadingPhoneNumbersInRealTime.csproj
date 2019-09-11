@@ -131,6 +131,15 @@
         <Compile Include="ViewController.designer.cs">
             <DependentUpon>ViewController.cs</DependentUpon>
         </Compile>
+        <Compile Include="VisionViewController.cs" />
+        <Compile Include="VisionViewController.designer.cs">
+          <DependentUpon>VisionViewController.cs</DependentUpon>
+        </Compile>
+        <Compile Include="PreviewView.cs" />
+        <Compile Include="PreviewView.designer.cs">
+          <DependentUpon>PreviewView.cs</DependentUpon>
+        </Compile>
+        <Compile Include="StringUtils.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>

@@ -9,10 +9,8 @@ using System;
 using System.CodeDom.Compiler;
 using UIKit;
 
-namespace ReadingPhoneNumbersInRealTime
-{
-    [Register ("PreviewView")]
-    partial class PreviewView
-    {
-    }
+namespace ReadingPhoneNumbersInRealTime {
+	[Register ("PreviewView")]
+	partial class PreviewView {
+	}
 }
