@@ -36,6 +36,7 @@ namespace ReadingPhoneNumbersInRealTime {
 			List<CGRect> greenBoxes = new List<CGRect> ();
 
 			var results = request.GetResults<VNRecognizedTextObservation> (); //check here
+			Console.WriteLine (results.Length);
 			var maximumCandidates = 1;
 
 			foreach (var visionResult in results) {
@@ -58,6 +59,9 @@ namespace ReadingPhoneNumbersInRealTime {
 						redBoxes.Add (visionResult.BoundingBox);
 				}
 			}
+			Console.WriteLine (redBoxes.Count);
+			Console.WriteLine (greenBoxes.Count);
+
 			NumberTracker.LogFrame (numbers.ToArray ());
 			Show (UIColor.Red.CGColor, redBoxes.ToArray ());
 			Show (UIColor.Green.CGColor, greenBoxes.ToArray ());

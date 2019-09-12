@@ -39,7 +39,7 @@ namespace ReadingPhoneNumbersInRealTime {
 			TextOrientation = ImageIO.CGImagePropertyOrientation.Up;
 			UIRotationTransform = CGAffineTransform.MakeIdentity ();
 			BottomToTopTransform = CGAffineTransform.MakeScale (1, -1);
-			BottomToTopTransform.Translate (0, -1);
+			BottomToTopTransform = CGAffineTransform.Translate (BottomToTopTransform, 0, -1);
 			ROIToGlobalTransform = CGAffineTransform.MakeIdentity ();
 			//VisionToAVFTransform = CGAffineTransform.MakeIdentity ();
 			//gestureRecognizer = new UITapGestureRecognizer ((gesture) => {
@@ -97,10 +97,7 @@ namespace ReadingPhoneNumbersInRealTime {
 				size = new CGSize (Math.Min (desiredWidthRatio * BufferAspectRatio, maxPortraitWidth), desiredHeightRatio / BufferAspectRatio);
 			else
 				size = new CGSize (desiredWidthRatio, desiredHeightRatio);
-			Console.WriteLine (CurrentOrientation.IsPortrait ());
-			Console.WriteLine (size);
 			RegionOfInterest = new CGRect ((1 - size.Width) / 2, (1 - size.Height) / 2, size.Width, size.Height);
-			Console.WriteLine (RegionOfInterest);
 			SetupOrientationAndTransform ();
 			DispatchQueue.MainQueue.DispatchAsync (() => { //make asynch
 				UpdateCutOut ();
@@ -110,27 +107,15 @@ namespace ReadingPhoneNumbersInRealTime {
 		public void UpdateCutOut ()
 		{
 			Console.WriteLine ("UpdateCutOut");
-			Console.WriteLine ("BottomToTopTransform");
-			Console.WriteLine (BottomToTopTransform);
-			Console.WriteLine ("UIRotationTransform");
-			Console.WriteLine (UIRotationTransform);
 			var temp = CGAffineTransform.CGRectApplyAffineTransform(RegionOfInterest, BottomToTopTransform);
-			Console.WriteLine (temp);
-			temp = CGAffineTransform.CGRectApplyAffineTransform (temp, BottomToTopTransform);
-			Console.WriteLine (temp);
-			Console.WriteLine (temp);
+			temp = CGAffineTransform.CGRectApplyAffineTransform (temp, UIRotationTransform);
 			var cutout = Preview.VideoPreviewLayer.MapToLayerCoordinates (temp);
-			Console.WriteLine (cutout);
 			var path = UIBezierPath.FromRect (CutoutView.Frame);
-			Console.WriteLine (path);
 			path.AppendPath (UIBezierPath.FromRect (cutout));
 			MaskLayer.Path = path.CGPath;
 			var numFrame = cutout;
 			numFrame.Y += numFrame.Height;
-			//NumberLabelView.Frame = numFrame;
 			NumberView.Frame = numFrame;
-			//Console.WriteLine (MaskLayer);
-			//Console.WriteLine (NumberView);
 		}
 
 		public void SetupOrientationAndTransform ()
@@ -138,9 +123,7 @@ namespace ReadingPhoneNumbersInRealTime {
 			Console.WriteLine ("SetupOrientationAndTransform");
 			var roi = RegionOfInterest;
 			ROIToGlobalTransform = CGAffineTransform.MakeTranslation (roi.X, roi.Y);
-			ROIToGlobalTransform.Scale (roi.Width, roi.Height);
-			Console.WriteLine ("ROIToGlobalTransform");
-			Console.WriteLine (ROIToGlobalTransform);
+			ROIToGlobalTransform = CGAffineTransform.Scale (ROIToGlobalTransform, roi.Width, roi.Height);
 			switch (CurrentOrientation) {
 			case UIDeviceOrientation.LandscapeLeft:
 				TextOrientation = ImageIO.CGImagePropertyOrientation.Up;
@@ -149,27 +132,25 @@ namespace ReadingPhoneNumbersInRealTime {
 			case UIDeviceOrientation.LandscapeRight:
 				TextOrientation = ImageIO.CGImagePropertyOrientation.Down;
 				UIRotationTransform = CGAffineTransform.MakeTranslation (1, 1);
-				UIRotationTransform.Rotate ((nfloat)Math.PI);
+				UIRotationTransform = CGAffineTransform.Rotate (UIRotationTransform, (nfloat)Math.PI);
 				break;
 			case UIDeviceOrientation.PortraitUpsideDown:
 				TextOrientation = ImageIO.CGImagePropertyOrientation.Left;
 				UIRotationTransform = CGAffineTransform.MakeTranslation (1, 0);
-				UIRotationTransform.Rotate ((nfloat)Math.PI / 2);
+				UIRotationTransform = CGAffineTransform.Rotate (UIRotationTransform, (nfloat)Math.PI / 2);
 				break;
 			default:
 				TextOrientation = ImageIO.CGImagePropertyOrientation.Right;
 				UIRotationTransform = CGAffineTransform.MakeTranslation (0, 1);
-				UIRotationTransform.Rotate (- (nfloat)Math.PI / 2);
+				UIRotationTransform = CGAffineTransform.Rotate (UIRotationTransform, -(nfloat)Math.PI/2);
 				break;
 			}
 			//VisionToAVFTransform = { ROIToGlobalTransform , BottomToTopTransform , UIRotationTransform};
-			//VisionToAVFTransform = //concats of ROIToGlobalTransform +BottomToTopTransform + UIRotationTransform;
 		}
 
 		public void SetupCamera ()
 		{
 			Console.WriteLine ("SetupCamera");
-			//var captureDevice = AVCaptureDevice.GetDefaultDevice (AVCaptureDeviceType.BuiltInWideAngleCamera, AVMediaTypes.Video, AVCaptureDevicePosition.Back); //null check
 			var captureDevice = AVCaptureDevice.GetDefaultDevice (AVCaptureDeviceType.BuiltInWideAngleCamera, AVMediaTypes.Video, AVCaptureDevicePosition.Back); // guard
 			CaptureDevice = captureDevice;
 			if (captureDevice.SupportsAVCaptureSessionPreset(AVCaptureSession.Preset3840x2160)) {
@@ -187,13 +168,7 @@ namespace ReadingPhoneNumbersInRealTime {
 			VideoDataOutput.AlwaysDiscardsLateVideoFrames = true;
 			VideoDataOutput.SetSampleBufferDelegateQueue (this, VideoDataOutputQueue);
 			//VideoDataOutput.WeakVideoSettings = new NSDictionary<NSString, NSString> ();
-			//VideoDataOutput.WeakVideoSettings.TryAdd<NSString, NSString> (CVPixelBuffer.PixelFormatTypeKey, new NSString ());
-			//{
-			//	CVPixelBuffer.PixelFormatTypeKey: new NSString()
-			//};
-			//VideoDataOutput.WeakVideoSettings = new NSDictionary<> // what the hell is happening?? CVPixelBuffer | PixelFormatTypeKey 
-			//VideoDataOutput.WeakVideoSettings = new NSDictionary<NSString, NSString/OSType> () {
-			//};
+			//VideoDataOutput.WeakVideoSettings.TryAdd<NSString, NSString> (CVPixelBuffer.PixelFormatTypeKey, OSType);
 
 			if (captureSession.CanAddOutput(VideoDataOutput)) {
 				captureSession.AddOutput (VideoDataOutput);
@@ -217,8 +192,6 @@ namespace ReadingPhoneNumbersInRealTime {
 				captureSession.StopRunning ();
 			});
 			DispatchQueue.MainQueue.DispatchSync (() => {
-				//NumberLabelView.Text = str;
-				//NumberLabelView.Hidden = false;
 				NumberView.Text = str;
 				NumberView.Hidden = false;
 			});
@@ -228,7 +201,6 @@ namespace ReadingPhoneNumbersInRealTime {
 		{
 			Console.WriteLine ("HandleTap");
 			DispatchQueue.MainQueue.DispatchAsync (() => { //make asynch
-				//NumberLabelView.Hidden = true;
 				NumberView.Hidden = true;
 				if (!captureSession.Running) {
 					captureSession.StartRunning ();
