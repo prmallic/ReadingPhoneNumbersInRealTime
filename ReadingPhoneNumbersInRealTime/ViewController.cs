@@ -25,7 +25,7 @@ namespace ReadingPhoneNumbersInRealTime {
 		public CGAffineTransform UIRotationTransform;
 		public CGAffineTransform BottomToTopTransform;
 		public CGAffineTransform ROIToGlobalTransform;
-		public CGAffineTransform [] VisionToAVFTransform;
+		public CGAffineTransform VisionToAVFTransform;
 		UITapGestureRecognizer gestureRecognizer;
 
 		public ViewController (IntPtr handle) : base (handle)
@@ -41,15 +41,13 @@ namespace ReadingPhoneNumbersInRealTime {
 			BottomToTopTransform = CGAffineTransform.MakeScale (1, -1);
 			BottomToTopTransform = CGAffineTransform.Translate (BottomToTopTransform, 0, -1);
 			ROIToGlobalTransform = CGAffineTransform.MakeIdentity ();
-			//VisionToAVFTransform = CGAffineTransform.MakeIdentity ();
-			//gestureRecognizer = new UITapGestureRecognizer ((gesture) => {
-			//	HandleTap ();
-			//});
+			gestureRecognizer = new UITapGestureRecognizer ((gesture) => {
+				HandleTap ();
+			});
 		}
 
 		public override void ViewDidLoad ()
 		{
-			Console.WriteLine ("ViewController ViewDidLoad");
 			base.ViewDidLoad ();
 			Preview.Session = captureSession;
 			CutoutView.BackgroundColor = UIColor.Gray.ColorWithAlpha (0.5f);
@@ -58,57 +56,49 @@ namespace ReadingPhoneNumbersInRealTime {
 			CutoutView.Layer.Mask = MaskLayer;
 			SetupCamera ();
 			CalculateRegionOfInterest ();
-			//VisionView.AddGestureRecognizer (gestureRecognizer);
+			CutoutView.AddGestureRecognizer (gestureRecognizer);
 		}
 
 		public override void ViewWillTransitionToSize (CGSize toSize, IUIViewControllerTransitionCoordinator coordinator)
 		{
-			Console.WriteLine ("ViewController ViewWillTransitionToSize");
 			base.ViewWillTransitionToSize (toSize, coordinator);
-			var deviceOrientation = UIDevice.CurrentDevice.Orientation;
+			UIDeviceOrientation deviceOrientation = UIDevice.CurrentDevice.Orientation;
 			if (deviceOrientation.IsPortrait () || deviceOrientation.IsLandscape ())
 				CurrentOrientation = deviceOrientation;
-			var videoPreviewLayerConnection = Preview.VideoPreviewLayer.Connection; // null check here
-			videoPreviewLayerConnection.VideoOrientation = (AVCaptureVideoOrientation)deviceOrientation;
+			AVCaptureConnection videoPreviewLayerConnection = Preview.VideoPreviewLayer.Connection;
+			if (videoPreviewLayerConnection != null)
+				videoPreviewLayerConnection.VideoOrientation = (AVCaptureVideoOrientation)deviceOrientation;
 			CalculateRegionOfInterest ();
 		}
 
 		public override void ViewDidLayoutSubviews ()
 		{
-			Console.WriteLine ("ViewController ViewDidLayoutSubviews");
 			base.ViewDidLayoutSubviews ();
 			UpdateCutOut ();
 		}
 
 		public override void DidReceiveMemoryWarning ()
 		{
-			Console.WriteLine ("ViewController DidReceiveMemoryWarning");
 			base.DidReceiveMemoryWarning ();
 		}
 
 		public void CalculateRegionOfInterest ()
 		{
-			Console.WriteLine ("CalculateRegionOfInterest");
 			var desiredHeightRatio = 0.15;
 			var desiredWidthRatio = 0.6;
 			var maxPortraitWidth = 0.8;
-			CGSize size;
-			if (CurrentOrientation.IsPortrait () || CurrentOrientation == UIDeviceOrientation.Unknown)
-				size = new CGSize (Math.Min (desiredWidthRatio * BufferAspectRatio, maxPortraitWidth), desiredHeightRatio / BufferAspectRatio);
-			else
-				size = new CGSize (desiredWidthRatio, desiredHeightRatio);
+			CGSize size = CurrentOrientation.IsPortrait () || CurrentOrientation == UIDeviceOrientation.Unknown
+				? new CGSize (Math.Min (desiredWidthRatio * BufferAspectRatio, maxPortraitWidth), desiredHeightRatio / BufferAspectRatio)
+				: new CGSize (desiredWidthRatio, desiredHeightRatio);
 			RegionOfInterest = new CGRect ((1 - size.Width) / 2, (1 - size.Height) / 2, size.Width, size.Height);
 			SetupOrientationAndTransform ();
-			DispatchQueue.MainQueue.DispatchAsync (() => { //make asynch
-				UpdateCutOut ();
-			});
+			DispatchQueue.MainQueue.DispatchAsync (UpdateCutOut);
 		}
 
 		public void UpdateCutOut ()
 		{
-			Console.WriteLine ("UpdateCutOut");
-			var temp = CGAffineTransform.CGRectApplyAffineTransform(RegionOfInterest, BottomToTopTransform);
-			temp = CGAffineTransform.CGRectApplyAffineTransform (temp, UIRotationTransform);
+			var roiRectTransform = CGAffineTransform.Multiply (BottomToTopTransform, UIRotationTransform);
+			var temp = CGAffineTransform.CGRectApplyAffineTransform (RegionOfInterest, roiRectTransform);
 			var cutout = Preview.VideoPreviewLayer.MapToLayerCoordinates (temp);
 			var path = UIBezierPath.FromRect (CutoutView.Frame);
 			path.AppendPath (UIBezierPath.FromRect (cutout));
@@ -120,7 +110,6 @@ namespace ReadingPhoneNumbersInRealTime {
 
 		public void SetupOrientationAndTransform ()
 		{
-			Console.WriteLine ("SetupOrientationAndTransform");
 			var roi = RegionOfInterest;
 			ROIToGlobalTransform = CGAffineTransform.MakeTranslation (roi.X, roi.Y);
 			ROIToGlobalTransform = CGAffineTransform.Scale (ROIToGlobalTransform, roi.Width, roi.Height);
@@ -142,18 +131,22 @@ namespace ReadingPhoneNumbersInRealTime {
 			default:
 				TextOrientation = ImageIO.CGImagePropertyOrientation.Right;
 				UIRotationTransform = CGAffineTransform.MakeTranslation (0, 1);
-				UIRotationTransform = CGAffineTransform.Rotate (UIRotationTransform, -(nfloat)Math.PI/2);
+				UIRotationTransform = CGAffineTransform.Rotate (UIRotationTransform, -(nfloat)Math.PI / 2);
 				break;
 			}
-			//VisionToAVFTransform = { ROIToGlobalTransform , BottomToTopTransform , UIRotationTransform};
+			VisionToAVFTransform = CGAffineTransform.Multiply (ROIToGlobalTransform, BottomToTopTransform);
+			VisionToAVFTransform = CGAffineTransform.Multiply (VisionToAVFTransform, UIRotationTransform);
 		}
 
 		public void SetupCamera ()
 		{
-			Console.WriteLine ("SetupCamera");
-			var captureDevice = AVCaptureDevice.GetDefaultDevice (AVCaptureDeviceType.BuiltInWideAngleCamera, AVMediaTypes.Video, AVCaptureDevicePosition.Back); // guard
+			AVCaptureDevice captureDevice = AVCaptureDevice.GetDefaultDevice (AVCaptureDeviceType.BuiltInWideAngleCamera, AVMediaTypes.Video, AVCaptureDevicePosition.Back);
+			if (captureDevice == null) {
+				Console.WriteLine ("Could not create capture device");
+				return;
+			}
 			CaptureDevice = captureDevice;
-			if (captureDevice.SupportsAVCaptureSessionPreset(AVCaptureSession.Preset3840x2160)) {
+			if (captureDevice.SupportsAVCaptureSessionPreset (AVCaptureSession.Preset3840x2160)) {
 				captureSession.SessionPreset = AVCaptureSession.Preset3840x2160;
 				BufferAspectRatio = 3840.0 / 2160.0;
 			} else {
@@ -161,7 +154,12 @@ namespace ReadingPhoneNumbersInRealTime {
 				BufferAspectRatio = 1920.0 / 1080.0;
 			}
 
-			var deviceInput = new AVCaptureDeviceInput (captureDevice, out NSError err);  //check error
+			AVCaptureDeviceInput deviceInput = new AVCaptureDeviceInput (captureDevice, out NSError deviceInputErr);
+			if (deviceInputErr != null) {
+				Console.WriteLine ("Could not create device input");
+				deviceInputErr.Dispose ();
+				return;
+			}
 			if (captureSession.CanAddInput (deviceInput))
 				captureSession.AddInput (deviceInput);
 
@@ -170,14 +168,19 @@ namespace ReadingPhoneNumbersInRealTime {
 			//VideoDataOutput.WeakVideoSettings = new NSDictionary<NSString, NSString> ();
 			//VideoDataOutput.WeakVideoSettings.TryAdd<NSString, NSString> (CVPixelBuffer.PixelFormatTypeKey, OSType);
 
-			if (captureSession.CanAddOutput(VideoDataOutput)) {
+			if (captureSession.CanAddOutput (VideoDataOutput)) {
 				captureSession.AddOutput (VideoDataOutput);
 				VideoDataOutput.ConnectionFromMediaType (AVMediaType.Video).PreferredVideoStabilizationMode = AVCaptureVideoStabilizationMode.Off;
 			} else {
 				Console.WriteLine ("Could not add VDO output");
 			}
 
-			captureDevice.LockForConfiguration (out NSError lockConf); //check error // try catch
+			_ = captureDevice.LockForConfiguration (out NSError lockConf);
+			if (lockConf != null) {
+				Console.WriteLine ("Could not set zoom level due to error: " + lockConf);
+				lockConf.Dispose ();
+				return;
+			}
 			captureDevice.VideoZoomFactor = 2;
 			captureDevice.AutoFocusRangeRestriction = AVCaptureAutoFocusRangeRestriction.Near;
 			captureDevice.UnlockForConfiguration ();
@@ -187,10 +190,7 @@ namespace ReadingPhoneNumbersInRealTime {
 
 		public void ShowString (string str)
 		{
-			Console.WriteLine ("ShowString");
-			DispatchQueue.MainQueue.DispatchSync (() => {
-				captureSession.StopRunning ();
-			});
+			DispatchQueue.MainQueue.DispatchSync (captureSession.StopRunning);
 			DispatchQueue.MainQueue.DispatchSync (() => {
 				NumberView.Text = str;
 				NumberView.Hidden = false;
@@ -199,8 +199,7 @@ namespace ReadingPhoneNumbersInRealTime {
 
 		private void HandleTap ()
 		{
-			Console.WriteLine ("HandleTap");
-			DispatchQueue.MainQueue.DispatchAsync (() => { //make asynch
+			DispatchQueue.MainQueue.DispatchAsync (() => {
 				NumberView.Hidden = true;
 				if (!captureSession.Running) {
 					captureSession.StartRunning ();
@@ -208,28 +207,5 @@ namespace ReadingPhoneNumbersInRealTime {
 			});
 		}
 	}
-
-
-	// what's the point of this??
-	//public static class AVCaptureVideoOrientationExtension {
-	//	public static AVCaptureVideoOrientation Init(this AVCaptureVideoOrientation aVCapture, UIDeviceOrientation orientation)
-	//	{
-	//		switch (orientation) {
-	//		case UIDeviceOrientation.Portrait:
-	//			aVCapture = AVCaptureVideoOrientation.Portrait;
-	//			break;
-	//		case UIDeviceOrientation.PortraitUpsideDown:
-	//			aVCapture = AVCaptureVideoOrientation.PortraitUpsideDown;
-	//			break;
-	//		case UIDeviceOrientation.LandscapeLeft:
-	//			aVCapture = AVCaptureVideoOrientation.LandscapeRight;
-	//			break;
-	//		case UIDeviceOrientation.LandscapeRight:
-	//			aVCapture = AVCaptureVideoOrientation.LandscapeLeft;
-	//			break;
-	//		}
-	//		return aVCapture;
-	//	}
-	//}
 
 }

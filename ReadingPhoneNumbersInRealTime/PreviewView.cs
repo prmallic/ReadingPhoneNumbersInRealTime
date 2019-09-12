@@ -10,7 +10,7 @@ namespace ReadingPhoneNumbersInRealTime {
 
 		public PreviewView (IntPtr handle) : base (handle)
 		{
-			VideoPreviewLayer = (AVCaptureVideoPreviewLayer)Layer; // check here //Expected `AVCaptureVideoPreviewLayer` type for layer. Check PreviewView.layerClass implementation
+			VideoPreviewLayer = (AVCaptureVideoPreviewLayer)Layer;
 		}
 
 		public AVCaptureSession Session {

@@ -7,11 +7,9 @@
 using Foundation;
 using System.CodeDom.Compiler;
 
-namespace ReadingPhoneNumbersInRealTime
-{
+namespace ReadingPhoneNumbersInRealTime {
 	[Register ("ViewController")]
-	partial class ViewController
-	{
+	partial class ViewController {
 		[Outlet]
 		public UIKit.UIView CutoutView { get; private set; }
 
@@ -20,7 +18,7 @@ namespace ReadingPhoneNumbersInRealTime
 
 		[Outlet]
 		public ReadingPhoneNumbersInRealTime.PreviewView Preview { get; private set; }
-		
+
 		void ReleaseDesignerOutlets ()
 		{
 			if (Preview != null) {
